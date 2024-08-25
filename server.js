@@ -44,7 +44,7 @@ const { Server } = require("socket.io");
 /* SETUP ACCESS SERVER PORT */
 /* on production mode it defines in .env file, but development mode its 3040 */
 /* check out .env file */
-const PORT = process.env.PORT || 3030;
+const PORT = process.env.PORT || 3040;
 
 /* ESTABLISH DATABASE CONNECTION */
 /** if we are using mongoose findByIdAndUpdate() function that we can find and uppdate it on the spot.
