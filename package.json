@@ -1,5 +1,5 @@
 {
-	"name": "polarx-server",
+	"name": "chatter-api",
 	"version": "0.0.1",
 	"description": "Node.js and Express server for Akula frontend with API endpoints, real-time Socket.IO, and MongoDB integration.",
 	"main": "server.js",
@@ -12,7 +12,7 @@
 		"s": "nodemon server.js",
 		"debug-server": "DEBUG=express:* nodemon server.js"
 	},
-	"author": "haniff",
+	"author": "hanifah",
 	"license": "ISC",
 	"dependencies": {
 		"async": "^3.2.5",
