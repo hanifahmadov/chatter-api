@@ -105,7 +105,7 @@ app.use(requestLogger);
 
 /* FOR TEST PERPUSES */
 /* TRY SERVER URL IN THE BROWSER. IF YOU ARE ON LOCAL, TRY localhost:3040  */
-app.get("/", (req, res) => res.json({ message: "welcome to chat POLAR-X" }));
+app.get("/", (req, res) => res.json({ message: " ♡ Welcome to Chatter ♡  " }));
 
 /* attach io to the app */
 app.set("io", io);

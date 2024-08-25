@@ -8,11 +8,7 @@ const bcrypt = require("bcrypt");
 const asyncHandler = require("express-async-handler");
 
 // imports
-const {
-	BadCredentialsError,
-	BadParamsError,
-	DuplicateKeyError,
-} = require("../../lib/custom_errors");
+const { BadCredentialsError, BadParamsError, DuplicateKeyError } = require("../../lib/custom_errors");
 
 const User = require("../models/user");
 
@@ -28,6 +24,8 @@ router.get(
 		console.log("refresher routes");
 		// get the jwt refresh tocken from the cookies
 		const cookies = req.cookies;
+
+		delay(3000);
 
 		// if no refresh token respond to json
 		// but later try to throw BadCredentialsError
@@ -46,19 +44,13 @@ router.get(
 			asyncHandler(async (err, decoded) => {
 				if (err) {
 					return res.status(403).json({
-						message:
-							"Forbidden. Refresh Token has expired.",
+						message: "Forbidden. Refresh Token has expired.",
 					});
 				}
 
-
-
 				const user = await User.findOne({ email: decoded.email });
 
-				if (!user)
-					return res
-						.status(401)
-						.json({ message: "Unauthorized! User not found" });
+				if (!user) return res.status(401).json({ message: "Unauthorized! User not found" });
 
 				//: generate access token again
 				const accessToken = jwt.sign(
@@ -77,7 +69,6 @@ router.get(
 
 				// save user
 				await user.save();
-				// await delay(1000);
 
 				// response
 				res.status(200).json({ user: user.toObject() });
