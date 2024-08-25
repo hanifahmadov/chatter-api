@@ -25,7 +25,7 @@ router.get(
 		// get the jwt refresh tocken from the cookies
 		const cookies = req.cookies;
 
-		delay(3000);
+		await delay(3000);
 
 		// if no refresh token respond to json
 		// but later try to throw BadCredentialsError
