@@ -32,7 +32,7 @@ const commentRoutes = require("./app/routes/commet_routes");
 const privateMessageRoutes = require("./app/routes/private_message_routes");
 
 /* CROSS PLATFORM ACCESS */
-const corsOptions = require("./config/corsOptions");
+const { corsOptions, allowedOrigins } = require("./config/corsOptions");
 
 /* Passport docs: http://www.passportjs.org/docs/ */
 const passport = require("passport");
@@ -69,8 +69,9 @@ const http_server = http.createServer(app);
 /* this just attaching socket io to http_server */
 const socketio = new Server(http_server, {
 	cors: {
-        origin: "*",  // Adjust the CORS settings based on your requirements
-    }
+		// origin: "*",
+		origin: allowedOrigins,
+	},
 });
 
 const io = _IO.create(socketio);

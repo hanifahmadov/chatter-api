@@ -9,7 +9,7 @@ const asyncHandler = require("express-async-handler");
 const multer = require("multer");
 const signup_multer = require("../middlewares/signup_multer");
 
-// imports
+/* custom errors */
 const {
 	BadCredentialsError,
 	BadParamsError,
@@ -17,35 +17,37 @@ const {
 	DocumentAlreadyExist,
 	EmailValidationError,
 } = require("../../lib/custom_errors");
+
+/* models */
 const User = require("../models/user");
-const chalk = require("chalk");
-// const loginLimitter = require("../middlewares/loginLimiter");
 
-// setups
-const bcryptSaltRounds = 10;
+/* passport setup */
 const requireToken = passport.authenticate("bearer", { session: false });
-const router = express.Router();
-/* ASYNC AWAIT */
 
-// POST
-// SIGN UP
+/* password encryption */
+const bcryptSaltRounds = 10;
+
+/* router initiate */
+const router = express.Router();
+
+/* sign up */
 router.post(
 	"/signup",
 	signup_multer.single("avatar"),
 	asyncHandler(async (req, res, next) => {
-		const { email, password, passwordConfirmation, baseurl } = req.body;
+		const { email, pwd, repwd, baseurl } = req.body;
 
 		/* attached on signup_multer file as filename */
 		const filename = req.filename;
 
 		/* default value based on image/profiles/file name in there */
-		const defaultFilename = "default01.jpeg";
+		const defaultFilename = "default-user.jpeg";
 
 		/* check if avatar image is provided or not */
 		const avatarAddress = filename ? baseurl + "/" + filename : baseurl + "/" + defaultFilename;
 
 		// check inputs
-		if (!email || !password || password !== passwordConfirmation) throw new BadParamsError();
+		if (!email || !pwd || pwd !== repwd) throw new BadParamsError();
 
 		// check if the user is already exist
 		const existUser = await User.findOne({ email });
@@ -53,10 +55,10 @@ router.post(
 		if (existUser) throw new DocumentAlreadyExist();
 
 		// hash password - returns promise
-		const hashed = await bcrypt.hash(password.toString(), bcryptSaltRounds);
+		const hashed = await bcrypt.hash(pwd.toString(), bcryptSaltRounds);
 
 		try {
-			// create
+			/* create a user */
 			const user = await User.create({
 				email,
 				hashedPassword: hashed,
@@ -64,7 +66,7 @@ router.post(
 				avatar: avatarAddress,
 			});
 
-			// response
+			/* response */
 			res.status(201).json({ user: user.toObject() });
 		} catch (error) {
 			if (error.name == "ValidationError") {
@@ -78,24 +80,21 @@ router.post(
 	})
 );
 
-// POST
-// SIGN IN
+/* signin */
 router.post(
 	"/signin",
 	asyncHandler(async (req, res, next) => {
-		const { password, email, remember } = req.body.credentials;
+		const { email, pwd, remember } = req.body;
 
-		// gets user from db
+		/* get user */
 		const user = await User.findOne({ email });
-
 		if (!user) throw new BadCredentialsError();
 
-		// check that the password is correct
-		let correctPassword = await bcrypt.compare(password, user.hashedPassword);
-
+		/* check password */
+		const correctPassword = await bcrypt.compare(pwd, user.hashedPassword);
 		if (!correctPassword) throw new BadCredentialsError();
 
-		// # generate access token
+		/* generate access-token */
 		const accessToken = jwt.sign(
 			{
 				UserInfo: {
@@ -104,15 +103,15 @@ router.post(
 				},
 			},
 			process.env.ACCESS_TOKEN_SECRET,
-			{ expiresIn: "1d" }
+			{ expiresIn: "1h" }
 		);
 
-		// # generate refresh token
+		/* generate refresh-token */
 		const refreshToken = jwt.sign({ email: user.email }, process.env.REFRESH_TOKEN_SECRET, {
-			expiresIn: remember ? "7d" : "1d",
+			expiresIn: remember ? "7d" : "1h",
 		});
 
-		// Create secure cookie with refresh token
+		/*  secure cookie with refresh token */
 		res.cookie("jwt", refreshToken, {
 			httpOnly: true, //accessible only by web server
 			secure: true, //https
@@ -120,15 +119,55 @@ router.post(
 			maxAge: 7 * 24 * 60 * 60 * 1000, //cookie expiry: set to match rT
 		});
 
-		// # set users accessToken
+		/* user setup */
 		user.accessToken = accessToken;
 		user.signedIn = true;
-
-		// save user
 		await user.save();
 
-		// response
+		/* response */
 		res.status(200).json({ user: user.toObject() });
+	})
+);
+
+/* sign out */
+router.delete(
+	"/signout",
+	asyncHandler(async (req, res, next) => {
+		/* get cookies */
+		const cookies = req.cookies;
+		const { _id } = req.body;
+
+		if (!cookies || !cookies.jwt) {
+			console.log("cokkies ARE EMPTY, returns 204");
+			res.sendStatus(204); //No content
+		}
+		// clear cookies
+		res.clearCookie("jwt", {
+			httpOnly: true,
+			sameSite: "None",
+			secure: true,
+		});
+
+		console.log("cookies cleared, returns 204");
+
+		/* get user and clear the token */
+		const user = await User.findOne({ _id });
+
+		if (!user) throw new BadCredentialsError();
+
+		/* clear token  */
+		user.accessToken = null;
+
+		/* dave */
+		await user.save();
+
+		console.log("toke all cleared > user saved");
+
+		/* delete user from socket online user server */
+		req.app.get("io").onlineUsers.delete(_id.toString());
+
+		/* 204 no content */
+		res.sendStatus(204);
 	})
 );
 
@@ -159,54 +198,6 @@ router.patch(
 
 		// response
 		res.sendStatus(204);
-	})
-);
-
-// DELETE
-// SIGN OUT
-// requireToken,
-router.delete(
-	"/signout",
-	requireToken,
-	asyncHandler(async (req, res, next) => {
-		console.log(req.app.get("io").onlineUsers.size);
-
-		console.log("user routes signout reached");
-		const cookies = req.cookies;
-		const { _id } = req.body;
-
-		if (!cookies || !cookies.jwt) {
-			console.log("cokkies ARE EMPTY, returns 204");
-			res.sendStatus(204); //No content
-		}
-		// clear cookies
-		res.clearCookie("jwt", {
-			httpOnly: true,
-			sameSite: "None",
-			secure: true,
-		});
-
-		console.log(chalk.green("cookies CLEARED, and returns 204"));
-		// save the token and respond with 204
-
-		// clear access token in user
-		let user = await User.findOne({ _id });
-
-		// create an custom Error like UserNotFound error
-		if (!user) throw new BadCredentialsError();
-
-		user.accessToken = null;
-
-		await user.save();
-
-		console.log(chalk.green("accessToken and signedIn cleared, user saved"));
-
-		req.app.get("io").onlineUsers.delete(_id.toString());
-
-		console.log(req.app.get("io").onlineUsers.size);
-
-		// response
-		res.sendStatus(204); //No content
 	})
 );
 

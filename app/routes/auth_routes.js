@@ -25,10 +25,17 @@ router.get(
 		// get the jwt refresh tocken from the cookies
 		const cookies = req.cookies;
 
-		await delay(2000);
-
 		// if no refresh token respond to json
 		// but later try to throw BadCredentialsError
+
+		/**
+		 * if cookies are cleared
+		 * that means user signed out or user is new
+		 * in that case when user visit "/" route, 
+		 * no need to apply delay and show Backdrop 
+		 * so make sure there is no delay above this line
+		 * 	
+		 */
 		if (!cookies || !cookies.jwt)
 			return res.status(401).json({
 				message: "Unauthorized! Cookies Refresh Token is missing",
@@ -38,11 +45,18 @@ router.get(
 
 		// based on refreshToken got it from the cookies
 		// verify and decode for a new access-token generator
+
+		/**
+		 *  delay here 
+		 */
+		await delay(1000);
+
 		jwt.verify(
 			refreshToken,
 			process.env.REFRESH_TOKEN_SECRET,
 			asyncHandler(async (err, decoded) => {
 				if (err) {
+
 					return res.status(403).json({
 						message: "Forbidden. Refresh Token has expired.",
 					});
@@ -61,7 +75,7 @@ router.get(
 						},
 					},
 					process.env.ACCESS_TOKEN_SECRET,
-					{ expiresIn: "1d" }
+					{ expiresIn: "10s" }
 				);
 
 				//: set users accessToken

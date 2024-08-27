@@ -17,8 +17,8 @@ const {
 /* models  */
 const User = require("../app/models/user");
 
-const tokenValidation = (socket, next) => {
-	const authorization = socket.handshake.headers.authorization;
+const tokenValidation = async (socket, next) => {
+	const authorization = await socket.handshake.headers.authorization;
 
 	if (authorization == undefined || authorization == "undefined") {
 		next(new SocketMissingTokenError(authorization));

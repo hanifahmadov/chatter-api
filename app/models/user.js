@@ -33,12 +33,6 @@ const userSchema = new mongoose.Schema(
 
 		avatar: {
 			type: String,
-
-			// TODO
-			// updatet the github express login template also
-			// default: "default01.jpeg",
-
-			/* NO default is needed, it will added when user will be created. check out user_routes /signup routes */
 			required: true,
 			trim: true,
 		},
