@@ -77,4 +77,10 @@ const userSchema = new mongoose.Schema(
 	}
 );
 
+userSchema.pre("save", function (next) {
+	// capitalize
+	this.username.charAt(0).toUpperCase() + this.username.slice(1).toLowerCase();
+	next();
+});
+
 module.exports = mongoose.model("User", userSchema);

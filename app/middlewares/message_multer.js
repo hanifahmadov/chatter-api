@@ -12,7 +12,7 @@ const storage = multer.diskStorage({
 	destination: (req, file, cb) => {
 		const rootDir = path.dirname(require.main.filename);
 		/* the file full path */
-		const dir = rootDir + "/public/private_messages/";
+		const dir = rootDir + "/public/messages/";
         /* return the path */
 		cb(null, dir);
 	},
@@ -62,5 +62,5 @@ const fileFilter = (req, file, cb) => {
 	return cb(null, true);
 };
 
-const privatemessage_multer = multer({ storage, fileFilter });
-module.exports = privatemessage_multer;
+const message_multer = multer({ storage, fileFilter });
+module.exports = message_multer;

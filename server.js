@@ -29,7 +29,7 @@ const userRoutes = require("./app/routes/user_routes");
 const authRoutes = require("./app/routes/auth_routes");
 const postRoutes = require("./app/routes/post_routes");
 const commentRoutes = require("./app/routes/commet_routes");
-const privateMessageRoutes = require("./app/routes/private_message_routes");
+const messageRoutes = require("./app/routes/message_routes");
 
 /* CROSS PLATFORM ACCESS */
 const { corsOptions, allowedOrigins } = require("./config/corsOptions");
@@ -99,7 +99,7 @@ app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 app.use(express.static(path.join(__dirname, "public/defaults")));
 app.use(express.static(path.join(__dirname, "public/profiles")));
 app.use(express.static(path.join(__dirname, "public/posts")));
-app.use(express.static(path.join(__dirname, "public/private_messages")));
+app.use(express.static(path.join(__dirname, "public/messages")));
 
 /* LOGS EVERY REQUESTS */
 app.use(requestLogger);
@@ -116,7 +116,7 @@ app.use(authRoutes);
 app.use(userRoutes);
 app.use(postRoutes);
 app.use(commentRoutes);
-app.use(privateMessageRoutes);
+app.use(messageRoutes);
 
 /* IMPORTANT */
 /* ERROR HANDLER AT THE END */

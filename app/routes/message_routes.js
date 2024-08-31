@@ -23,10 +23,10 @@ const {
 const Like = require("../models/like");
 const Post = require("../models/post");
 const Comment = require("../models/comment");
-const PrivateMessage = require("../models/private_message");
+const Message = require("../models/message");
 
 /* multer */
-const privatemessage_multer = require("../middlewares/privatemessage_multer");
+const message_multer = require("../middlewares/message_multer");
 
 /* start router */
 const router = express.Router();
@@ -36,25 +36,27 @@ const requireToken = passport.authenticate("bearer", { session: false });
 
 /* POST */
 router.post(
-	"/private_messages/create",
+	"/messages/create",
 	requireToken,
-	privatemessage_multer.single("image"),
+	message_multer.single("image"),
 	asyncHandler(async (req, res, next) => {
+		console.log("arrived");
 		const { _id } = req.user;
 		const { imagename } = req;
 		const { text, baseurl, recipientId, randomDate } = req.body;
 
-		const pvt_msg_media = imagename ? baseurl + "/" + imagename : undefined;
+		const msg_media = imagename ? baseurl + "/" + imagename : undefined;
 
-		await PrivateMessage.create({
+		await Message.create({
 			sender: _id,
 			recipient: recipientId,
 			message: text,
-			media: pvt_msg_media,
+			media: msg_media,
+			createdAt: randomDate ? randomDate : new Date(),
 		});
 
 		// emit the new post event to all connected clients
-		req.app.get("io").server.emit("on_new_pvtmessage", true);
+		req.app.get("io").server.emit("on_messages", true);
 
 		// response
 		res.status(201).json({ created: true });
@@ -63,24 +65,25 @@ router.post(
 
 /* GET */
 router.get(
-	"/private_messages/read",
+	"/messages/read",
 	requireToken,
 	asyncHandler(async (req, res, next) => {
 		const { _id } = req.user;
 
 		try {
-			const all_pvt_messages = await PrivateMessage.find().populate({
+			const messages = await Message.find().populate({
 				path: "recipient",
 				select: "-accessToken -hashedPassword",
 			});
 
 			// Uncomment if you need to emit an event
-			// req.app.get("io").server.emit("on_newpost", true);
+			// req.app.get("io").server.emit("on_messages", true);
 
 			// response
-			res.status(200).json({ all_pvt_messages });
+			res.status(200).json({ messages });
 		} catch (error) {
-			// Optional: Error handling for improved debugging
+			/* Error handling for improved debugging */
+			console.log("messages/read error >> ", error);
 			next(error);
 		}
 	})

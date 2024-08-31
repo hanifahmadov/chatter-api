@@ -103,12 +103,12 @@ router.post(
 				},
 			},
 			process.env.ACCESS_TOKEN_SECRET,
-			{ expiresIn: "1h" }
+			{ expiresIn: "1d" }
 		);
 
 		/* generate refresh-token */
 		const refreshToken = jwt.sign({ email: user.email }, process.env.REFRESH_TOKEN_SECRET, {
-			expiresIn: remember ? "7d" : "1h",
+			expiresIn: remember ? "7d" : "1d",
 		});
 
 		/*  secure cookie with refresh token */

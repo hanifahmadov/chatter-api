@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const PrivateMessageSchema = new mongoose.Schema({
+const messageSchema = new mongoose.Schema({
 	sender: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "User",
@@ -36,10 +36,10 @@ const PrivateMessageSchema = new mongoose.Schema({
 });
 
 // Before saving the message, update the `updatedAt` field
-PrivateMessageSchema.pre("save", function (next) {
+messageSchema.pre("save", function (next) {
 	this.updatedAt = Date.now();
 	next();
 });
 
-module.exports = mongoose.model("Private_Message", PrivateMessageSchema);
+module.exports = mongoose.model("Message", messageSchema);
 
