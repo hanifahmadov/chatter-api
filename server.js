@@ -46,6 +46,8 @@ const { Server } = require("socket.io");
 /* check out .env file */
 const PORT = process.env.PORT || 3040;
 
+console.log(db)
+
 /* ESTABLISH DATABASE CONNECTION */
 /** if we are using mongoose findByIdAndUpdate() function that we can find and uppdate it on the spot.
  * 	this function is great for these type of procedures and it depricated by mongoose already.

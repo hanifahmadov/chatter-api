@@ -9,6 +9,8 @@ const allowedOrigins = [
 	"52.22.120.131",
 	"http://52.22.120.131",
 	"https://52.22.120.131",
+	"*", // Allows requests from everywhere
+	"0.0.0.0", // Optional, generally not needed if "*" is used
 ];
 
 const corsOptions = {
