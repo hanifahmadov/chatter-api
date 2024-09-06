@@ -89,4 +89,79 @@ router.get(
 	})
 );
 
+/* GET SINGLE MESSAGES last messages*/
+router.get(
+	"/messages/:recipientId/last-message",
+	requireToken,
+	asyncHandler(async (req, res, next) => {
+		const { _id } = req.user;
+		const { recipientId: recipient } = req.params;
+
+		console.log("_id", _id);
+
+		try {
+			const messages = await Message.find({
+				$or: [
+					{ sender: _id, recipient: recipient },
+					{ sender: recipient, recipient: _id },
+				],
+			}).populate({
+				path: "recipient",
+				select: "-accessToken -hashedPassword",
+			});
+
+			/* sort messages based on dates */
+			await messages.sort((a, b) => {
+				new Date(a.createdAt) - new Date(b.createdAt);
+			});
+
+			/* cached */
+			const result = {
+				unread: 0,
+				lastMessage: messages.length > 0 ? messages[messages.length - 1] : {},
+			};
+
+			/* count for unread */
+			for (const mess of messages) {
+				if (mess.sender.equals(recipient) && mess.isRead == false) {
+					result.unread += 1;
+				}
+			}
+
+			// response
+			res.status(200).json({ messages: result });
+		} catch (error) {
+			/* Error handling for improved debugging */
+			console.log("messages/read error >> ", error);
+			next(error);
+		}
+	})
+);
+
+/* GET SINGLE MESSAGES */
+router.post(
+	"/messages/:recipientId/mark-read",
+	requireToken,
+	asyncHandler(async (req, res, next) => {
+		const { recipientId } = req.params;
+		const { _id: userId } = req.user;
+
+		try {
+			// Find and update all messages that have not been read yet
+			await Message.updateMany(
+				{
+					sender: recipientId,
+					recipient: userId,
+					isRead: false,
+				},
+				{ $set: { isRead: true } }
+			);
+
+			res.status(200).json({ message: "Messages marked as read." });
+		} catch (error) {
+			res.status(500).json({ error: "Failed to mark messages as read." });
+		}
+	})
+);
+
 module.exports = router;
