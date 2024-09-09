@@ -50,13 +50,40 @@ class _IO {
 				const newuser = new UserSocket(socket);
 				this.onlineUsers.set(socket.user._id.toString(), newuser);
 
+				// get the ids of online users
+				const onlineUsers = Array.from(this.onlineUsers.keys());
+
+				/** when user signs out */
+				this.server.emit("new_connection", onlineUsers);
+
 				socket.on(
 					"disconnect",
 					asyncHandler(async () => {
-						console.log("_IO: socket disconnected");
+						console.log("_IO: socket disconnected", socket.user.email + "left");
 
-						this.onlineUsers.delete(socket.user._id);
-						this.server.emit("on_disconnect");
+						/** when user lost a connection to the server
+						 *  update his lastseen with the current time
+						 * 	fyi- user is assigned to socket and socket.user is a reference type
+						 * 	any change like below affects the database user details
+						 */
+						socket.user.lastseen = new Date()
+						await socket.user.save()
+
+						/** when user sings out
+						 *  remove him from server online-users
+						 */
+						this.onlineUsers.delete(socket.user._id.toString());
+
+						console.log("this.onlineUsers.", this.onlineUsers);
+
+						// get the ids of online users
+						const onlineUsers = Array.from(this.onlineUsers.keys());
+
+						/* emit online users */
+						this.server.emit("new_connection", onlineUsers);
+
+						/* emit info who left */
+						this.server.emit("on_disconnect", socket.user.email + " left");
 					})
 				);
 			})

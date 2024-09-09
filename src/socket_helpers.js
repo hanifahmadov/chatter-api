@@ -35,11 +35,12 @@ const tokenValidation = async (socket, next) => {
         }
 
 		/* token decode */
-		let user = await User.findOne({ _id: decoded.UserInfo.id });
+		const user = await User.findOne({ _id: decoded.UserInfo.id });
 
         /* no user */
 		if (!user) throw new DocumentNotFoundError();
-
+		
+		
         /* attach user */
         socket.user = user;
        

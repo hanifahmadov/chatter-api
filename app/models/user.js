@@ -48,6 +48,16 @@ const userSchema = new mongoose.Schema(
 			trim: true,
 		},
 
+		lastseen: {
+			type: Date,
+			default: null,
+		},
+
+		online: {
+			type: Boolean,
+			default: false,
+		},
+
 		followers: [
 			{
 				type: [mongoose.Schema.Types.ObjectId],

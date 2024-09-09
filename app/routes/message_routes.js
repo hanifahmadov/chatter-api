@@ -76,6 +76,8 @@ router.get(
 				select: "-accessToken -hashedPassword",
 			});
 
+
+
 			// Uncomment if you need to emit an event
 			// req.app.get("io").server.emit("on_messages", true);
 
@@ -96,8 +98,6 @@ router.get(
 	asyncHandler(async (req, res, next) => {
 		const { _id } = req.user;
 		const { recipientId: recipient } = req.params;
-
-		console.log("_id", _id);
 
 		try {
 			const messages = await Message.find({

@@ -46,7 +46,7 @@ const { Server } = require("socket.io");
 /* check out .env file */
 const PORT = process.env.PORT || 3040;
 
-console.log(db);
+// console.log(db);
 
 /* ESTABLISH DATABASE CONNECTION */
 /** if we are using mongoose findByIdAndUpdate() function that we can find and uppdate it on the spot.
@@ -78,9 +78,6 @@ const socketio = new Server(http_server, {
 
 const io = _IO.create(socketio);
 
-(req, res) => {
-	console.log(req.headers);
-};
 
 /* CORS OPTIONS APPLIED */
 app.use(cors(corsOptions));

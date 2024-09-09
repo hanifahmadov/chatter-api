@@ -64,17 +64,14 @@ router.post(
 				hashedPassword: hashed,
 				username: email.split("@")[0],
 				avatar: avatarAddress,
+				lastseen: new Date(),
 			});
 
 			/* response */
 			res.status(201).json({ user: user.toObject() });
 		} catch (error) {
 			if (error.name == "ValidationError") {
-				res.status(400).json({
-					status: 12000,
-					errors: "Validation errors occurred",
-					message: `This email doesnt contain a valid domain name.\nEnding with ( gmail.com yahoo.com  ..etc )`,
-				});
+				throw new EmailValidationError();
 			}
 		}
 	})
@@ -122,7 +119,13 @@ router.post(
 		/* user setup */
 		user.accessToken = accessToken;
 		user.signedIn = true;
+		/* update online status */
+		// user.online = true;
+
 		await user.save();
+
+		// emit the new sign in user event to all connected clients
+		// req.app.get("io").server.emit("on_signin", true);
 
 		/* response */
 		res.status(200).json({ user: user.toObject() });
@@ -157,14 +160,11 @@ router.delete(
 
 		/* clear token  */
 		user.accessToken = null;
+		user.lastseen = new Date();
 
 		/* dave */
 		await user.save();
-
 		console.log("toke all cleared > user saved");
-
-		/* delete user from socket online user server */
-		req.app.get("io").onlineUsers.delete(_id.toString());
 
 		/* 204 no content */
 		res.sendStatus(204);
