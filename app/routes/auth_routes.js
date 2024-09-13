@@ -8,7 +8,7 @@ const bcrypt = require("bcrypt");
 const asyncHandler = require("express-async-handler");
 
 // imports
-const { BadCredentialsError, BadParamsError, DuplicateKeyError } = require("../../lib/custom_errors");
+const { BadCredentialsError, BadParamsError, DuplicateKeyError, DocumentNotFoundError } = require("../../lib/custom_errors");
 
 const User = require("../models/user");
 
@@ -21,7 +21,8 @@ router.get(
 	asyncHandler(async (req, res, next) => {
 		const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-		console.log("refresher routes");
+
+		await delay(1500);
 		// get the jwt refresh tocken from the cookies
 		const cookies = req.cookies;
 
@@ -31,15 +32,16 @@ router.get(
 		/**
 		 * if cookies are cleared
 		 * that means user signed out or user is new
-		 * in that case when user visit "/" route, 
-		 * no need to apply delay and show Backdrop 
+		 * in that case when user visit "/" route,
+		 * no need to apply delay and show Backdrop
 		 * so make sure there is no delay above this line
-		 * 	
+		 *
 		 */
-		if (!cookies || !cookies.jwt)
-			return res.status(401).json({
-				message: "Unauthorized! Cookies Refresh Token is missing",
-			});
+		if (!cookies || !cookies.jwt) {
+			/** status code is 401 */
+			throw new BadCredentialsError();
+		}
+
 		// if refresh token, have it
 		const refreshToken = cookies.jwt;
 
@@ -47,24 +49,29 @@ router.get(
 		// verify and decode for a new access-token generator
 
 		/**
-		 *  delay here 
+		 *  delay here
 		 */
-		await delay(1000);
+		
 
 		jwt.verify(
 			refreshToken,
 			process.env.REFRESH_TOKEN_SECRET,
 			asyncHandler(async (err, decoded) => {
-				if (err) {
+				/**
+				 *  cookies token expired
+				 * 	status code is 422
+				 */
+				if (err) throw new BadParamsError();
 
-					return res.status(403).json({
-						message: "Forbidden. Refresh Token has expired.",
-					});
-				}
-
+				/**
+				 *  if token is valid
+				 * 	retrieve the user and response with
+				 * 	current user
+				 * 	there is no way the user is undefined
+				 * 	thats why no need to check the user id defined or not
+				 * 	because if cookies are provided and not expired then it will get decoded
+				 */
 				const user = await User.findOne({ email: decoded.email });
-
-				if (!user) return res.status(401).json({ message: "Unauthorized! User not found" });
 
 				//: generate access token again
 				const accessToken = jwt.sign(
@@ -78,13 +85,11 @@ router.get(
 					{ expiresIn: "1d" }
 				);
 
-				//: set users accessToken
+				/*  set users accessToken */
 				user.accessToken = accessToken;
-
-				// save user
 				await user.save();
 
-				// response
+				/* response */
 				res.status(200).json({ user: user.toObject() });
 			})
 		);

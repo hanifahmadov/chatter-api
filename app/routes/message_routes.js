@@ -56,7 +56,7 @@ router.post(
 		});
 
 		// emit the new post event to all connected clients
-		req.app.get("io").server.emit("on_messages", true);
+		req.app.get("io").server.emit("new_message", true);
 
 		// response
 		res.status(201).json({ created: true });
@@ -71,15 +71,12 @@ router.get(
 		const { _id } = req.user;
 
 		try {
-			const messages = await Message.find().populate({
-				path: "recipient",
+			const messages = await Message.find({
+				$or: [{ sender: _id }, { recipient: _id }],
+			}).populate({
+				path: "recipient sender",
 				select: "-accessToken -hashedPassword",
 			});
-
-
-
-			// Uncomment if you need to emit an event
-			// req.app.get("io").server.emit("on_messages", true);
 
 			// response
 			res.status(200).json({ messages });
@@ -148,7 +145,7 @@ router.post(
 
 		try {
 			// Find and update all messages that have not been read yet
-			await Message.updateMany(
+			const count = await Message.updateMany(
 				{
 					sender: recipientId,
 					recipient: userId,
@@ -157,9 +154,11 @@ router.post(
 				{ $set: { isRead: true } }
 			);
 
-			res.status(200).json({ message: "Messages marked as read." });
+
+			res.status(200).json({ modifiedCount: count.nModified });
 		} catch (error) {
-			res.status(500).json({ error: "Failed to mark messages as read." });
+			console.log("Failed to mark messages as read.", error);
+			next(error);
 		}
 	})
 );

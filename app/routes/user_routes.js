@@ -11,11 +11,14 @@ const signup_multer = require("../middlewares/signup_multer");
 
 /* custom errors */
 const {
-	BadCredentialsError,
+	DocumentNotFoundError,
 	BadParamsError,
-	DuplicateKeyError,
+	BadCredentialsError,
+	SocketMissingTokenError,
+	SocketExpireTokendError,
 	DocumentAlreadyExist,
 	EmailValidationError,
+	BadMimetypeError,
 } = require("../../lib/custom_errors");
 
 /* models */
@@ -85,11 +88,11 @@ router.post(
 
 		/* get user */
 		const user = await User.findOne({ email });
-		if (!user) throw new BadCredentialsError();
+		if (!user) throw new DocumentNotFoundError();
 
 		/* check password */
 		const correctPassword = await bcrypt.compare(pwd, user.hashedPassword);
-		if (!correctPassword) throw new BadCredentialsError();
+		if (!correctPassword) throw new BadParamsError();
 
 		/* generate access-token */
 		const accessToken = jwt.sign(
