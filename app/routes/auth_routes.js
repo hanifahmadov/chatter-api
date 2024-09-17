@@ -6,9 +6,15 @@ const passport = require("passport");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const asyncHandler = require("express-async-handler");
+const { promisify } = require("util");
 
 // imports
-const { BadCredentialsError, BadParamsError, DuplicateKeyError, DocumentNotFoundError } = require("../../lib/custom_errors");
+const {
+	BadCredentialsError,
+	BadParamsError,
+	DuplicateKeyError,
+	DocumentNotFoundError,
+} = require("../../lib/custom_errors");
 
 const User = require("../models/user");
 
@@ -20,7 +26,6 @@ router.get(
 	"/refreshAccess",
 	asyncHandler(async (req, res, next) => {
 		const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
 
 		await delay(1500);
 		// get the jwt refresh tocken from the cookies
@@ -48,51 +53,62 @@ router.get(
 		// based on refreshToken got it from the cookies
 		// verify and decode for a new access-token generator
 
-		/**
-		 *  delay here
-		 */
-		
+		// Promisify the jwt.verify function
+		const verifyAsync = promisify(jwt.verify);
 
-		jwt.verify(
-			refreshToken,
-			process.env.REFRESH_TOKEN_SECRET,
-			asyncHandler(async (err, decoded) => {
-				/**
-				 *  cookies token expired
-				 * 	status code is 422
-				 */
-				if (err) throw new BadParamsError();
+		/* get decoded */
+		let decoded;
 
-				/**
-				 *  if token is valid
-				 * 	retrieve the user and response with
-				 * 	current user
-				 * 	there is no way the user is undefined
-				 * 	thats why no need to check the user id defined or not
-				 * 	because if cookies are provided and not expired then it will get decoded
-				 */
-				const user = await User.findOne({ email: decoded.email });
+		try {
+			decoded = await verifyAsync(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+		} catch (err) {
+			throw new BadParamsError();
+		}
 
-				//: generate access token again
-				const accessToken = jwt.sign(
-					{
-						UserInfo: {
-							id: user._id,
-							email: user.email,
-						},
-					},
-					process.env.ACCESS_TOKEN_SECRET,
-					{ expiresIn: "1d" }
-				);
+		const user = await User.findOne({ email: decoded.email });
 
-				/*  set users accessToken */
-				user.accessToken = accessToken;
-				await user.save();
+		res.status(200).json({ user: user.toObject() });
 
-				/* response */
-				res.status(200).json({ user: user.toObject() });
-			})
-		);
+		// jwt.verify(
+		// 	refreshToken,
+		// 	process.env.REFRESH_TOKEN_SECRET,
+		// 	asyncHandler(async (err, decoded) => {
+		// 		/**
+		// 		 *  cookies token expired
+		// 		 * 	status code is 422
+		// 		 */
+		// 		if (err) throw new BadParamsError();
+
+		// 		/**
+		// 		 *  if token is valid
+		// 		 * 	retrieve the user and response with
+		// 		 * 	current user
+		// 		 * 	there is no way the user is undefined
+		// 		 * 	thats why no need to check the user id defined or not
+		// 		 * 	because if cookies are provided and not expired then it will get decoded
+		// 		 */
+		// 		const user = await User.findOne({ email: decoded.email });
+
+		// 		/* generate access token again */
+		// 		const accessToken = jwt.sign(
+		// 			{
+		// 				UserInfo: {
+		// 					id: user._id,
+		// 					email: user.email,
+		// 				},
+		// 			},
+		// 			process.env.ACCESS_TOKEN_SECRET,
+		// 			{ expiresIn: "1d" }
+		// 		);
+
+		// 		/*  set users accessToken */
+		// 		user.accessToken = accessToken;
+		// 		await user.save();
+
+		// 		/* response */
+		// 		res.status(200).json({ user: user.toObject() });
+		// 	})
+		// );
 	})
 );
 
